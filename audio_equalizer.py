@@ -10,7 +10,7 @@ class AudioEqualizer:
         self.block_size = 2048
         self.is_running = False
         
-        # Equalizer bantları (Hz cinsinden)
+        
         self.bands = {
             '60 Hz': 60,
             '170 Hz': 170,
@@ -24,22 +24,22 @@ class AudioEqualizer:
             '16 kHz': 16000
         }
         
-        # Her bant için kazanç değerleri (dB)
+        
         self.gains = {band: 0.0 for band in self.bands}
         
-        # Filtre parametreleri
-        self.q_factor = 1.0  # Bant genişliği
+        
+        self.q_factor = 1.0  
         
     def create_peak_filter(self, center_freq, gain_db, q_factor):
-        """Belirli bir frekans için peak/notch filtresi oluşturur"""
-        gain = 10 ** (gain_db / 20)  # dB'den lineer kazanca çevir
+        
+        gain = 10 ** (gain_db / 20)  
         
         w0 = 2 * np.pi * center_freq / self.sample_rate
         alpha = np.sin(w0) / (2 * q_factor)
         
         A = gain
         
-        # Biquad filtre katsayıları
+        
         b0 = 1 + alpha * A
         b1 = -2 * np.cos(w0)
         b2 = 1 - alpha * A
@@ -47,26 +47,26 @@ class AudioEqualizer:
         a1 = -2 * np.cos(w0)
         a2 = 1 - alpha / A
         
-        # Normalize et
+        
         b = np.array([b0/a0, b1/a0, b2/a0])
         a = np.array([1, a1/a0, a2/a0])
         
         return b, a
     
     def apply_equalizer(self, audio_data):
-        """Equalizer filtrelerini ses verisine uygula"""
+        
         output = audio_data.copy()
         
         for band_name, center_freq in self.bands.items():
             gain_db = self.gains[band_name]
             
-            if abs(gain_db) > 0.1:  # Sadece önemli kazançları uygula
+            if abs(gain_db) > 0.1:  
                 b, a = self.create_peak_filter(center_freq, gain_db, self.q_factor)
                 
-                # Her kanal için filtreleme
-                if len(output.shape) == 1:  # Mono
+                
+                if len(output.shape) == 1:  
                     output = signal.lfilter(b, a, output)
-                else:  # Stereo
+                else:  
                     for ch in range(output.shape[1]):
                         output[:, ch] = signal.lfilter(b, a, output[:, ch])
         
